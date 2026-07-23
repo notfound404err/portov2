@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Edit meta description for SEO -->
+
+    <meta
+      name="description"
+      content="hii everyone I'm the developer of notfound-MD, notfound-MD is a WhatsApp bot and will help you carry out daily activities"
+    />
+    <!-- Edit title -->
+    <title>notfound</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;900&family=Work+Sans:wght@400;800&display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;900&family=Work+Sans:wght@400;800&display=swap"
+        rel="stylesheet"
+        type="text/css"
+      />
+    </noscript>
+    
+    <!-- Styleshits -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  
+  <body>
+    <!-- Navigation -->
+    <nav>
+      <ul>
+        <li><a href="#top">HOME</a></li>
+        <li><a href="#project">PROJECTS</a></li>
+        <li><a href="#about">ABOUT</a></li>
+      </ul>
+    </nav>
+    <!-- End of Navigation -->
+    
+    <!-- Home -->
+    <section class="center">
+      <main>
+        <!-- img and info container -->
+        <div class="img-info-container">
+          <!-- profile picture -->
+          <div class="img-container">
+            <img
+              width="80"
+              height="80"
+              src="./asset/img/aduhay.png"
+              alt="pfp"
+            />
+          </div>
+          
+          <!-- info / the large text and social media -->
+          <div class="info-container">
+            <!-- svg/social media container -->
+            <div class="social-container">
+              <!-- GITHUB -->
+              <a href="https://github.com/notfound404err" target="_blank"
+                ><img
+                  width="24"
+                  height="24"
+                  src="./asset/svg/github.svg"
+                  alt="github"
+              /></a>
+
+              <!-- LINKEDIN -->
+              <a
+                href="https://wa.me/+6285931248430"
+                target="_blank"
+                ><img
+                  width="24"
+                  height="24"
+                  src="./asset/svg/linkedin.svg"
+                  alt="linkedin"
+              /></a>
+            </div>
+
+            <!-- name -->
+            <h1>notfound</h1>
+            <hr />
+          </div>
+        </div>
+
+        <p class="user-bio">
+          hii everyone I'm the developer of notfound-MD. <br />
+        notfound-MD is a WhatsApp bot and will help you carry out daily activities.
+        </p>
+        <!-- Quote  -->
+        <div class="quote-container">
+          <p>
+            <i>
+              You cannot use the word "possibility" without limitations <br />
+              - Master Higuchi
+            </i>
+          </p>
+        </div>
+      </main>
+    </section>
+    <!-- End of Home -->
+
+    <!-- Start of Project -->
+    <section class="center">
+      <div id="project">
+        <h2>PROJECTS</h2>
+        <!-- project container/ grid -->
+        <div class="project-container" id="project-list">
+            <!-- Nanti JavaScript akan memasukkan data project dari database ke sini secara otomatis -->
+        </div>
+      </div>
+    </section>
+    <!-- End of Project -->
+    
+    <!-- About -->
+    <div class="center">
+      <div id="about">
+        <!-- Image  -->
+        <div class="about-img-container">
+          <img
+            width="80"
+            height="80"
+            src="./asset/img/aduhay.png"
+            alt="pfp"
+          />
+        </div>
+        <!-- Name -->
+        <h2 class="gradient">notfound</h2>
+        <!-- social media container -->
+        <ul class="about-social-container">
+          <li>
+            <img src="./asset/svg/github.svg" alt="Github" />
+            <a href="https://github.com/notfound404err/">Github</a>
+          </li>
+          
+          <li>
+            <img src="./asset/svg/mail.svg" alt="LinkedIn" />
+            <a href="404@notfound404.my.id">Mail</a>
+          </li>
+          
+          <li>
+            <img src="./asset/svg/linkedin.svg" alt="LinkedIn" />
+            <a href="#"> LinkedIn</a>
+          </li>
+        </ul>
+        <!-- long bio -->
+        <p>
+          I'm the developer of notfound-MD. <br />
+         I also make random things what comes into my mega big brain. <br>
+        </p>
+        <!-- Skills / Tools -->
+        <h3>Skills / Tools</h3>
+        <ul class="skill">
+          <li>HTML</li>
+          <li>CSS</li>
+          <li>JavaScript</li>
+          <li>Webdesigner</li>
+          <li>Phyton</li>
+          <li>React</li>
+          <li>Hydra</li>
+          <li>Node.js</li>
+          <li>Vite</li>
+          <li>Git</li>
+          <li>KaliLinux (Ubuntu)</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      <!-- Its okay to remove my name here (indeed you'll get hit) -->
+      <p>
+        © <script>document.write( new Date().getFullYear() );</script> Built by <a href="https://t.me/ntfund440">notfound</a>
+      </p>
+    </footer>
+
+    <!-- remove if you want to remove hover effect -->
+    <script type="module" src="./script/event-effect.js"></script>
+  </body>
+  <script>
+    // Fungsi untuk mengambil data project dari backend MySQL
+    async function loadProjects() {
+        const projectListContainer = document.getElementById('project-list');
+        
+        try {
+            // Meminta data ke server lokal kita
+            const response = await fetch('http://localhost:3000/api/projects');
+            const projects = await response.json();
+
+            // Kosongkan container sebelum diisi
+            projectListContainer.innerHTML = '';
+
+            // 1. Looping data project dari database dan buat elemen HTML-nya
+            projects.forEach(project => {
+                const toolsHTML = project.tools.map(tool => 
+                    `<span class="language-used">${tool}</span>`
+                ).join('');
+
+                const projectHTML = `
+                    <div class="repository-container">
+                        <div class="repository-head">
+                            <a href="${project.repository_url}" target="_blank" rel="noopener noreferrer">
+                                <h3>${project.title}</h3>
+                            </a>
+                            <a href="${project.repository_url}" target="_blank" rel="noopener noreferrer">
+                                <img width="16" height="16" src="./asset/svg/external-link.svg" alt="external-link"/>
+                            </a>
+                        </div>
+                        <p class="repository-description">${project.description}</p>
+                        <div class="repository-language-used-container">
+                            ${toolsHTML}
+                        </div>
+                    </div>
+                `;
+                projectListContainer.innerHTML += projectHTML;
+            });
+
+            // 2. Tambahkan tombol "more at GITHUB" di urutan paling akhir
+            const githubButtonHTML = `
+                <div class="repository-container more-repo">
+                  more at
+                  <a href="https://github.com/notfound404err?tab=repositories" target="_blank">
+                    GITHUB <img src="./asset/svg/external-link.svg" alt="external-link" />
+                  </a>
+                </div>
+            `;
+            projectListContainer.innerHTML += githubButtonHTML;
+
+        } catch (error) {
+            console.error('Gagal mengambil data project:', error);
+            projectListContainer.innerHTML = '<p style="color: red; padding: 20px;">Gagal memuat project dari server. Pastikan server Node.js dan XAMPP menyala.</p>';
+        }
+    }
+
+    // Jalankan fungsi saat halaman web pertama kali dibuka
+    window.addEventListener('DOMContentLoaded', loadProjects);
+    // Script Sensor Pelacak Kunjungan
+    fetch('http://localhost:3000/api/visit', { method: 'POST' })
+        .catch(err => console.log('Sensor analitik offline'));
+  </script>
+  
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #070a2d;
+            --bg-card: #222431;
+            --border-color: #3b4252;
+            --accent-green: #00b377;
+            --accent-green-hover: #008c5d;
+            --accent-red: #ff4d4d;
+            --accent-blue: #3b82f6;
+            --text-main: #cdced5;
+        }
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px;
+        }
+        .wrapper { max-width: 1000px; margin: auto; }
+        
+        /* Layar Login */
+        #login-screen {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            max-width: 400px;
+            margin: 80px auto;
+        }
+        
+        /* Sembunyikan dashboard sebelum login */
+        #dashboard-screen { display: none; }
+
+        .header-flex {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+        }
+        
+        /* Stats & Layout */
+        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; align-items: center; gap: 15px; }
+        .stat-icon { font-size: 40px; }
+        .stat-info h4 { margin: 0; font-size: 14px; color: #a0a3bd; }
+        .stat-info h2 { margin: 5px 0 0 0; font-size: 28px; color: white; }
+        .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .card { background: var(--bg-card); padding: 25px; border-radius: 8px; border: 1px solid var(--border-color); }
+        
+        /* Form & Button */
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; background: var(--bg-main); border: 1px solid var(--border-color); color: white; border-radius: 4px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; width: 100%; }
+        .btn-primary { background: var(--accent-green); }
+        .btn-secondary { background: #4b5563; width: auto;}
+        .btn-warning { background: var(--accent-blue); width: auto; font-size: 12px;}
+        .btn-danger { background: var(--accent-red); width: auto; font-size: 12px;}
+        
+        .project-row { background: var(--bg-main); border: 1px solid var(--border-color); padding: 15px; margin-bottom: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <!-- LAYAR LOGIN -->
+    <div id="login-screen">
+        <h2>Admin Login</h2>
+        <p style="font-size: 13px; margin-bottom: 20px;">Sistem Keamanan JWT Diaktifkan.</p>
+        <input type="password" id="admin-pass" placeholder="Sandi (contoh: smekda123)">
+        <button class="btn-primary" onclick="handleLogin()">Masuk Dashboard</button>
+        <p id="login-error" style="color: var(--accent-red); font-size: 12px; margin-top: 10px;"></p>
+    </div>
+
+    <!-- DASHBOARD UTAMA -->
+    <div id="dashboard-screen" class="wrapper">
+        <div class="header-flex">
+            <h2 style="margin: 0;">💻 Dashboard Analitik Notfound</h2>
+            <button class="btn-secondary" onclick="handleLogout()">Logout</button>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">👁️</div>
+                <div class="stat-info"><h4>Total Pengunjung</h4><h2 id="total-visitors">0</h2></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-info"><h4>Project Aktif</h4><h2 id="total-projects">0</h2></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🛡️</div>
+                <div class="stat-info"><h4>Keamanan JWT</h4><h2 style="color: var(--accent-green);">Aktif</h2></div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="card">
+                <h3 style="margin-top:0;" id="form-title">Tambah Project</h3>
+                <form id="projectForm">
+                    <input type="hidden" id="project-id">
+                    <label>Judul Project</label>
+                    <input type="text" id="title" required>
+                    <label>Deskripsi Singkat</label>
+                    <textarea id="description" rows="3" required></textarea>
+                    <label>URL / Link Github</label>
+                    <input type="text" id="repository_url" required>
+                    <label>Tools (Pisahkan koma)</label>
+                    <input type="text" id="tools" required>
+                    <button type="submit" class="btn-primary" id="submit-btn">Simpan Data</button>
+                    <p id="message" style="text-align:center; font-size:12px; margin-top:10px;"></p>
+                </form>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin-top:0;">Grafik Interaksi Database</h3>
+                    <canvas id="myChart" height="80"></canvas>
+                </div>
+                <div class="card">
+                    <h3 style="margin-top:0;">Manajemen Project</h3>
+                    <div id="admin-project-list"><i>Memuat data...</i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SISTEM OTENTIKASI (JWT) ---
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('adminToken');
+            if (token) showDashboard();
+        });
+
+        async function handleLogin() {
+            const inputPass = document.getElementById('admin-pass').value;
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: inputPass })
+                });
+                
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    showDashboard();
+                } else {
+                    document.getElementById('login-error').textContent = '❌ ' + data.message;
+                }
+            } catch (error) {
+                document.getElementById('login-error').textContent = '❌ Server tidak merespon.';
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-screen').style.display = 'block';
+            loadData();
+            loadStats();
+        }
+
+        // Fungsi penyedia Tiket JWT secara otomatis
+        function getAuthHeader() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
+            };
+        }
+
+
+        // --- 2. SISTEM ANALITIK (CHART & STATS) ---
+        
+        let analyticsChart;
+        function initChart(projectsCount, visitorsCount) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (analyticsChart) {
+                analyticsChart.data.datasets[0].data = [projectsCount, visitorsCount];
+                analyticsChart.update();
+            } else {
+                analyticsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jumlah Project', 'Jumlah Pengunjung'],
+                        datasets: [{ label: 'Statistik', data: [projectsCount, visitorsCount], backgroundColor: ['#3b82f6', '#00b377'], borderRadius: 5 }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#cdced5' } }, x: { ticks: { color: '#cdced5' } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        async function loadStats() {
+            if (!localStorage.getItem('adminToken')) return; 
+
+            try {
+                const response = await fetch('http://localhost:3000/api/stats');
+                const data = await response.json();
+                
+                document.getElementById('total-projects').textContent = data.total_projects || 0;
+                document.getElementById('total-visitors').textContent = data.total_visits || 0;
+                initChart(data.total_projects || 0, data.total_visits || 0);
+            } catch (error) {
+                console.error("Gagal load statistik");
+            }
+        }
+        
+        setInterval(loadStats, 3000); 
+
+
+        // --- 3. SISTEM CRUD PROJECT ---
+        
+        const form = document.getElementById('projectForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('project-id').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const repository_url = document.getElementById('repository_url').value;
+            const tools = document.getElementById('tools').value.split(',').map(t => t.trim());
+
+            const isEditing = id !== "";
+            const url = isEditing ? `http://localhost:3000/api/projects/${id}` : 'http://localhost:3000/api/projects';
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: getAuthHeader(), // Menyisipkan token JWT
+                    body: JSON.stringify({ title, description, repository_url, tools })
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    alert('Sesi habis! Silakan login kembali.');
+                    handleLogout();
+                    return;
+                }
+
+                form.reset();
+                document.getElementById('project-id').value = '';
+                document.getElementById('submit-btn').textContent = 'Simpan Data';
+                document.getElementById('form-title').textContent = 'Tambah Project';
+                loadData();
+            } catch (err) {
+                alert('Gagal menyimpan data.');
+            }
+        });
+
+        async function loadData() {
+            const list = document.getElementById('admin-project-list');
+            try {
+                const response = await fetch('http://localhost:3000/api/projects');
+                const projects = await response.json();
+                list.innerHTML = '';
+                
+                projects.forEach(p => {
+                    const toolsStr = Array.isArray(p.tools) ? p.tools.join(', ') : p.tools;
+                    list.innerHTML += `
+                        <div class="project-row">
+                            <div>
+                                <strong style="color:white">${p.title}</strong>
+                                <p style="margin:5px 0 0 0; font-size:13px; color:#a0a3bd">${p.description}</p>
+                            </div>
+                            <div>
+                                <button class="btn-warning" onclick='editProject(${p.id}, ${JSON.stringify(p.title)}, ${JSON.stringify(p.description)}, ${JSON.stringify(p.repository_url)}, ${JSON.stringify(toolsStr)})'>Edit</button>
+                                <button class="btn-danger" onclick="deleteData(${p.id})">Hapus</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                list.innerHTML = 'Gagal memuat data.';
+            }
+        }
+
+        function editProject(id, title, desc, repo, tools) {
+            document.getElementById('project-id').value = id;
+            document.getElementById('title').value = title;
+            document.getElementById('description').value = desc;
+            document.getElementById('repository_url').value = repo;
+            document.getElementById('tools').value = tools;
+            document.getElementById('form-title').textContent = 'Edit Project: ' + title;
+            document.getElementById('submit-btn').textContent = 'Perbarui Data';
+        }
+
+        async function deleteData(id) {
+            if(confirm('Hapus project ini?')) {
+                const response = await fetch(`http://localhost:3000/api/projects/${id}`, { 
+                    method: 'DELETE',
+                    headers: getAuthHeader() // Menyisipkan token JWT
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    alert('Akses ditolak! Token tidak valid.');
+                    return;
+                }
+                loadData();
+            }
+        }
+    </script>
+</body>
+</html>
