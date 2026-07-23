@@ -439,4 +439,5 @@ To remove the hover effect. Go to `index.html` and find this `<script>` tag and 
 <script type="module" src="./script/event-effect.js"></script>
 ```
 #   p o r t o v 2  
+ #   p o r t o v 2  
  
