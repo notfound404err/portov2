@@ -1,129 +1,132 @@
-import 'dotenv/config';
-import express from 'express';
-import mysql from 'mysql2/promise';
-import cors from 'cors';
-import jwt from 'jsonwebtoken';
+// 1. Impor Firebase SDK dari CDN Google
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  updateDoc, 
+  serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const SECRET_KEY = "manuk23";
-const app = express();
-
-app.use(cors()); 
-app.use(express.json()); 
-
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  if (password === 'nyenuk123') {
-    const token = jwt.sign({ role: 'admin' }, SECRET_KEY, { expiresIn: '2h' });
-    res.json({ success: true, token: token });
-  } else {
-    res.status(401).json({ success: false, message: 'Sandi salah!' });
-  }
-});
-
-const autentikasiToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Akses ditolak! Tiket tidak ada.' });
-
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Sesi habis atau tiket palsu!' });
-    req.user = user;
-    next();
-  });
+// 2. Konfigurasi Firebase (Masukkan data dari Firebase Console-mu)
+const firebaseConfig = {
+  apiKey: "AIzaSyBGPvYY8VQeF8s3IqyM12ELFJZ9XaaeWtQ",
+  authDomain: "notfoundporto.firebaseapp.com",
+  projectId: "notfoundporto",
+  storageBucket: "notfoundporto.firebasestorage.app",
+  messagingSenderId: "771934638191",
+  appId: "1:771934638191:web:9057a5915934641406bd9a",
+  measurementId: "G-2Y1C1Z2BNG"
 };
 
-// Konfigurasi Database yang fleksibel (bisa XAMPP lokal & bisa Online)
-const db = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'notfound_db',
-  port: process.env.DB_PORT || 3306,
-  ssl: process.env.DB_SSL ? { rejectUnauthorized: false } : false
-});
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-db.getConnection()
-  .then((connection) => {
-    console.log('✅ Berhasil terhubung ke database MySQL!');
-    connection.release();
-  })
-  .catch((err) => {
-    console.error('❌ Gagal terhubung ke database:', err.message);
-  });
-
-app.get('/api/projects', async (req, res) => {
+// ==================== 1. GET: Mengambil dan Menampilkan Data Project ====================
+async function loadProjects() {
   try {
-    const [rows] = await db.query('SELECT * FROM projects ORDER BY created_at DESC');
-    const projects = rows.map(item => ({
-      ...item,
-      tools: item.tools ? item.tools.split(',').map(t => t.trim()) : []
-    }));
-    res.json(projects);
-  } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil data project', error: error.message });
-  }
-});
+    const querySnapshot = await getDocs(collection(db, "projects"));
+    const projectsContainer = document.getElementById("projects-container"); // Sesuaikan id elemen di HTML
+    
+    if (projectsContainer) {
+      projectsContainer.innerHTML = "";
+    }
 
-app.post('/api/projects', autentikasiToken, async (req, res) => {
+    querySnapshot.forEach((documentSnap) => {
+      const project = documentSnap.data();
+      const projectId = documentSnap.id;
+
+      // Ubah tools jika bentuknya string agar jadi array yang rapi
+      const toolsArray = Array.isArray(project.tools) 
+        ? project.tools 
+        : (project.tools ? project.tools.split(",").map(t => t.trim()) : []);
+
+      console.log(`${projectId} =>`, project);
+
+      // Render ke HTML (opsional, sesuaikan dengan desain webmu)
+      if (projectsContainer) {
+        projectsContainer.innerHTML += `
+          <div class="project-card" data-id="${projectId}">
+            <h3>${project.title}</h3>
+            <p>${project.description}</p>
+            <p><strong>Tools:</strong> ${toolsArray.join(", ")}</p>
+            ${project.repository_url ? `<a href="${project.repository_url}" target="_blank">Repository</a>` : ""}
+            <button onclick="handleDelete('${projectId}')">Hapus</button>
+          </div>
+        `;
+      }
+    });
+  } catch (error) {
+    console.error("Gagal mengambil data project:", error);
+  }
+}
+
+// ==================== 2. POST: Menambahkan Project Baru ====================
+window.handleAddProject = async function(event) {
+  event.preventDefault(); // Mencegah reload halaman jika dipakai di dalam form
+
+  const title = document.getElementById("title-input").value;
+  const description = document.getElementById("desc-input").value;
+  const repository_url = document.getElementById("repo-input") ? document.getElementById("repo-input").value : "";
+  const toolsInput = document.getElementById("tools-input").value;
+
+  // Ubah tools jadi array
+  const toolsArray = toolsInput.split(",").map(t => t.trim());
+
   try {
-    const { title, description, repository_url, tools } = req.body;
-    const toolsString = Array.isArray(tools) ? tools.join(', ') : tools;
-    const query = 'INSERT INTO projects (title, description, repository_url, tools) VALUES (?, ?, ?, ?)';
-    const [result] = await db.query(query, [title, description, repository_url, toolsString]);
-    res.status(201).json({ message: 'Project berhasil ditambahkan!', data: { id: result.insertId, title, description, repository_url, tools } });
-  } catch (error) {
-    res.status(400).json({ message: 'Gagal menyimpan project', error: error.message });
-  }
-});
+    await addDoc(collection(db, "projects"), {
+      title,
+      description,
+      repository_url,
+      tools: toolsArray,
+      created_at: serverTimestamp()
+    });
 
-app.delete('/api/projects/:id', autentikasiToken, async (req, res) => {
+    alert("✅ Project berhasil ditambahkan!");
+    loadProjects(); // Refresh tampilan data
+  } catch (error) {
+    console.error("Gagal menyimpan project:", error);
+    alert("❌ Gagal menyimpan project");
+  }
+}
+
+// ==================== 3. DELETE: Menghapus Project ====================
+window.handleDelete = async function(id) {
+  if (confirm("Yakin ingin menghapus project ini?")) {
+    try {
+      await deleteDoc(doc(db, "projects", id));
+      alert("✅ Project berhasil dihapus!");
+      loadProjects(); // Refresh tampilan data
+    } catch (error) {
+      console.error("Gagal menghapus project:", error);
+      alert("❌ Gagal menghapus project");
+    }
+}
+}
+
+// ==================== 4. PUT: Mengupdate Project ====================
+window.handleUpdate = async function(id, newTitle, newDesc, newRepo, newTools) {
   try {
-    const projectId = req.params.id;
-    await db.query('DELETE FROM projects WHERE id = ?', [projectId]);
-    res.json({ message: '✅ Project berhasil dihapus!' });
+    const toolsArray = Array.isArray(newTools) ? newTools : newTools.split(",").map(t => t.trim());
+    const projectRef = doc(db, "projects", id);
+
+    await updateDoc(projectRef, {
+      title: newTitle,
+      description: newDesc,
+      repository_url: newRepo,
+      tools: toolsArray
+    });
+
+    alert("✅ Project berhasil diperbarui!");
+    loadProjects(); // Refresh tampilan data
   } catch (error) {
-    res.status(500).json({ message: '❌ Gagal menghapus project', error: error.message });
+    console.error("Gagal mengupdate project:", error);
+    alert("❌ Gagal mengupdate project");
   }
-});
+}
 
-app.put('/api/projects/:id', autentikasiToken, async (req, res) => {
-  try {
-    const projectId = req.params.id;
-    const { title, description, repository_url, tools } = req.body;
-    const toolsString = Array.isArray(tools) ? tools.join(', ') : tools;
-    const query = 'UPDATE projects SET title = ?, description = ?, repository_url = ?, tools = ? WHERE id = ?';
-    await db.query(query, [title, description, repository_url, toolsString, projectId]);
-    res.json({ message: 'Project berhasil diperbarui!' });
-  } catch (error) {
-    res.status(500).json({ message: '❌ Gagal mengupdate project', error: error.message });
-  }
-});
-
-app.post('/api/visit', async (req, res) => {
-  try {
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    await db.query('INSERT INTO page_views (user_agent) VALUES (?)', [userAgent]);
-    res.status(200).json({ message: 'Kunjungan tercatat' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/stats', async (req, res) => {
-  try {
-    const [projects] = await db.query('SELECT COUNT(*) as total_projects FROM projects');
-    const [visits] = await db.query('SELECT COUNT(*) as total_visits FROM page_views');
-    res.json({ total_projects: projects[0].total_projects, total_visits: visits[0].total_visits });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/', (req, res) => {
-  res.send('Server Backend MySQL untuk Admin Dashboard Aktif!');
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`🚀 Server berjalan di port ${port}`);
-});
+// Jalankan fungsi load data saat halaman web dibuka
+loadProjects();
