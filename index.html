@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Edit meta description for SEO -->
-
     <meta
       name="description"
       content="hii everyone I'm the developer of notfound-MD, notfound-MD is a WhatsApp bot and will help you carry out daily activities"
@@ -32,7 +31,7 @@
       />
     </noscript>
     
-    <!-- Styleshits -->
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css" />
   </head>
   
@@ -75,7 +74,7 @@
                   alt="github"
               /></a>
 
-              <!-- LINKEDIN -->
+              <!-- LINKEDIN / WHATSAPP -->
               <a
                 href="https://wa.me/+6285931248430"
                 target="_blank"
@@ -116,7 +115,7 @@
         <h2>PROJECTS</h2>
         <!-- project container/ grid -->
         <div class="project-container" id="project-list">
-            <!-- Nanti JavaScript akan memasukkan data project dari database ke sini secara otomatis -->
+            <!-- Data project akan dimasukkan oleh Firebase secara otomatis di sini -->
         </div>
       </div>
     </section>
@@ -144,8 +143,8 @@
           </li>
           
           <li>
-            <img src="./asset/svg/mail.svg" alt="LinkedIn" />
-            <a href="404@notfound404.my.id">Mail</a>
+            <img src="./asset/svg/mail.svg" alt="Mail" />
+            <a href="mailto:404@notfound404.my.id">Mail</a>
           </li>
           
           <li>
@@ -156,7 +155,7 @@
         <!-- long bio -->
         <p>
           I'm the developer of notfound-MD. <br />
-         I also make random things what comes into my mega big brain. <br>
+        I also make random things what comes into my mega big brain. <br>
         </p>
         <!-- Skills / Tools -->
         <h3>Skills / Tools</h3>
@@ -177,41 +176,68 @@
     </div>
 
     <footer>
-      <!-- Its okay to remove my name here (indeed you'll get hit) -->
       <p>
         © <script>document.write( new Date().getFullYear() );</script> Built by <a href="https://t.me/ntfund440">notfound</a>
       </p>
     </footer>
 
-    <!-- remove if you want to remove hover effect -->
+    <!-- Efek interaksi opsional -->
     <script type="module" src="./script/event-effect.js"></script>
   </body>
-  <script>
-    // Fungsi untuk mengambil data project dari backend MySQL
+
+  <!-- Skrip Koneksi Firebase Firestore -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Masukkan konfigurasi Firebase milikmu di bawah ini
+    const firebaseConfig = {
+      apiKey: "MASUKKAN_API_KEY_KAMU",
+      authDomain: "MASUKKAN_AUTH_DOMAIN_KAMU",
+      projectId: "MASUKKAN_PROJECT_ID_KAMU",
+      storageBucket: "MASUKKAN_STORAGE_BUCKET_KAMU",
+      messagingSenderId: "MASUKKAN_MESSAGING_SENDER_ID_KAMU",
+      appId: "MASUKKAN_APP_ID_KAMU"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Fungsi untuk mengambil data project dari Firebase Firestore
     async function loadProjects() {
         const projectListContainer = document.getElementById('project-list');
         
         try {
-            // Meminta data ke server lokal kita
-            const response = await fetch('http://localhost:3000/api/projects');
-            const projects = await response.json();
+            const querySnapshot = await getDocs(collection(db, "projects"));
 
             // Kosongkan container sebelum diisi
             projectListContainer.innerHTML = '';
 
-            // 1. Looping data project dari database dan buat elemen HTML-nya
-            projects.forEach(project => {
-                const toolsHTML = project.tools.map(tool => 
+            if (querySnapshot.empty) {
+                projectListContainer.innerHTML = '<p style="padding: 20px;">Belum ada project yang ditambahkan.</p>';
+                return;
+            }
+
+            // Looping data project dari database Firestore
+            querySnapshot.forEach(docSnap => {
+                const project = docSnap.data();
+                
+                // Pastikan tools berupa array atau pisahkan dengan koma
+                const toolsArray = Array.isArray(project.tools) 
+                    ? project.tools 
+                    : (project.tools ? project.tools.split(',').map(t => t.trim()) : []);
+
+                const toolsHTML = toolsArray.map(tool => 
                     `<span class="language-used">${tool}</span>`
                 ).join('');
 
                 const projectHTML = `
                     <div class="repository-container">
                         <div class="repository-head">
-                            <a href="${project.repository_url}" target="_blank" rel="noopener noreferrer">
+                            <a href="${project.repository_url || '#'}" target="_blank" rel="noopener noreferrer">
                                 <h3>${project.title}</h3>
                             </a>
-                            <a href="${project.repository_url}" target="_blank" rel="noopener noreferrer">
+                            <a href="${project.repository_url || '#'}" target="_blank" rel="noopener noreferrer">
                                 <img width="16" height="16" src="./asset/svg/external-link.svg" alt="external-link"/>
                             </a>
                         </div>
@@ -224,28 +250,24 @@
                 projectListContainer.innerHTML += projectHTML;
             });
 
-            // 2. Tambahkan tombol "more at GITHUB" di urutan paling akhir
+            // Tambahkan tombol "more at GITHUB" di urutan paling akhir
             const githubButtonHTML = `
                 <div class="repository-container more-repo">
-                  more at
-                  <a href="https://github.com/notfound404err?tab=repositories" target="_blank">
-                    GITHUB <img src="./asset/svg/external-link.svg" alt="external-link" />
-                  </a>
+                    more at
+                    <a href="https://github.com/notfound404err?tab=repositories" target="_blank">
+                        GITHUB <img src="./asset/svg/external-link.svg" alt="external-link" />
+                    </a>
                 </div>
             `;
             projectListContainer.innerHTML += githubButtonHTML;
 
         } catch (error) {
             console.error('Gagal mengambil data project:', error);
-            projectListContainer.innerHTML = '<p style="color: red; padding: 20px;">Gagal memuat project dari server. Pastikan server Node.js dan XAMPP menyala.</p>';
+            projectListContainer.innerHTML = '<p style="color: red; padding: 20px;">Gagal memuat project dari database cloud.</p>';
         }
     }
 
     // Jalankan fungsi saat halaman web pertama kali dibuka
     window.addEventListener('DOMContentLoaded', loadProjects);
-    // Script Sensor Pelacak Kunjungan
-    fetch('http://localhost:3000/api/visit', { method: 'POST' })
-        .catch(err => console.log('Sensor analitik offline'));
   </script>
-  
 </html>
