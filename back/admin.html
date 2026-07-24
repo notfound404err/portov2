@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Admin Dashboard</title>
+    <title>Professional Admin Dashboard - Firebase</title>
+    <!-- Chart.js untuk Grafik Interaktif -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -25,7 +26,7 @@
         }
         .wrapper { max-width: 1000px; margin: auto; }
         
-        /* Layar Login */
+        /* Layar Login Sederhana */
         #login-screen {
             background: var(--bg-card);
             padding: 40px;
@@ -36,7 +37,7 @@
             margin: 80px auto;
         }
         
-        /* Sembunyikan dashboard sebelum login */
+        /* Sembunyikan dashboard sebelum klik masuk */
         #dashboard-screen { display: none; }
 
         .header-flex {
@@ -66,11 +67,11 @@
 </head>
 <body>
 
-    <!-- LAYAR LOGIN -->
+    <!-- LAYAR LOGIN ADMIN -->
     <div id="login-screen">
         <h2>Admin Login</h2>
-        <p style="font-size: 13px; margin-bottom: 20px;">Sistem Keamanan JWT Diaktifkan.</p>
-        <input type="password" id="admin-pass" placeholder="Sandi (contoh: smekda123)">
+        <p style="font-size: 13px; margin-bottom: 20px;">Sistem Database Cloud Firebase</p>
+        <input type="password" id="admin-pass" placeholder="Masukkan Sandi (bebas)">
         <button class="btn-primary" onclick="handleLogin()">Masuk Dashboard</button>
         <p id="login-error" style="color: var(--accent-red); font-size: 12px; margin-top: 10px;"></p>
     </div>
@@ -78,26 +79,23 @@
     <!-- DASHBOARD UTAMA -->
     <div id="dashboard-screen" class="wrapper">
         <div class="header-flex">
-            <h2 style="margin: 0;">💻 Dashboard Analitik Notfound</h2>
+            <h2 style="margin: 0;">💻 Dashboard Admin - Firebase</h2>
             <button class="btn-secondary" onclick="handleLogout()">Logout</button>
         </div>
 
         <div class="stats-container">
             <div class="stat-card">
-                <div class="stat-icon">👁️</div>
-                <div class="stat-info"><h4>Total Pengunjung</h4><h2 id="total-visitors">0</h2></div>
-            </div>
-            <div class="stat-card">
                 <div class="stat-icon">📁</div>
-                <div class="stat-info"><h4>Project Aktif</h4><h2 id="total-projects">0</h2></div>
+                <div class="stat-info"><h4>Total Project</h4><h2 id="total-projects">0</h2></div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🛡️</div>
-                <div class="stat-info"><h4>Keamanan JWT</h4><h2 style="color: var(--accent-green);">Aktif</h2></div>
+                <div class="stat-icon">🔥</div>
+                <div class="stat-info"><h4>Database Cloud</h4><h2 style="color: var(--accent-green); font-size: 20px; margin-top: 8px;">Firestore</h2></div>
             </div>
         </div>
 
         <div class="content-grid">
+            <!-- Form Tambah / Edit Project -->
             <div class="card">
                 <h3 style="margin-top:0;" id="form-title">Tambah Project</h3>
                 <form id="projectForm">
@@ -109,117 +107,115 @@
                     <label>URL / Link Github</label>
                     <input type="text" id="repository_url" required>
                     <label>Tools (Pisahkan koma)</label>
-                    <input type="text" id="tools" required>
+                    <input type="text" id="tools" placeholder="Contoh: HTML, CSS, JS" required>
                     <button type="submit" class="btn-primary" id="submit-btn">Simpan Data</button>
-                    <p id="message" style="text-align:center; font-size:12px; margin-top:10px;"></p>
                 </form>
             </div>
 
             <div>
+                <!-- Grafik Statistik -->
                 <div class="card" style="margin-bottom: 20px;">
-                    <h3 style="margin-top:0;">Grafik Interaksi Database</h3>
-                    <canvas id="myChart" height="80"></canvas>
+                    <h3 style="margin-top:0;">Grafik Statistik Project</h3>
+                    <canvas id="myChart" height="90"></canvas>
                 </div>
+                <!-- Daftar Manajemen Project -->
                 <div class="card">
                     <h3 style="margin-top:0;">Manajemen Project</h3>
-                    <div id="admin-project-list"><i>Memuat data...</i></div>
+                    <div id="admin-project-list"><i>Memuat data dari Firebase...</i></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- 1. SISTEM OTENTIKASI (JWT) ---
-        
+    <!-- SKRIP UTAMA FIREBASE & DASHBOARD -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            addDoc, 
+            deleteDoc, 
+            doc, 
+            updateDoc, 
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // === MASUKKAN KONFIGURASI FIREBASE KAMU DI SINI ===
+        const firebaseConfig = {
+            apiKey: "MASUKKAN_API_KEY_KAMU",
+            authDomain: "MASUKKAN_AUTH_DOMAIN_KAMU",
+            projectId: "MASUKKAN_PROJECT_ID_KAMU",
+            storageBucket: "MASUKKAN_STORAGE_BUCKET_KAMU",
+            messagingSenderId: "MASUKKAN_MESSAGING_SENDER_ID_KAMU",
+            appId: "MASUKKAN_APP_ID_KAMU"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- 1. SISTEM OTENTIKASI SEDERHANA ---
         window.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('adminToken');
-            if (token) showDashboard();
+            const isLogged = localStorage.getItem('isAdminLoggedIn');
+            if (isLogged === 'true') {
+                showDashboard();
+            }
         });
 
-        async function handleLogin() {
-            const inputPass = document.getElementById('admin-pass').value;
-            
-            try {
-                const response = await fetch('http://localhost:3000/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: inputPass })
-                });
-                
-                const data = await response.json();
-
-                if (data.success) {
-                    localStorage.setItem('adminToken', data.token);
-                    showDashboard();
-                } else {
-                    document.getElementById('login-error').textContent = '❌ ' + data.message;
-                }
-            } catch (error) {
-                document.getElementById('login-error').textContent = '❌ Server tidak merespon.';
+        window.handleLogin = function() {
+            const pass = document.getElementById('admin-pass').value;
+            // Ganti sandi admin sesuai keinginan di sini (misal: "smekda123")
+            if (pass === "smekda123") {
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                showDashboard();
+            } else {
+                document.getElementById('login-error').textContent = '❌ Sandi salah!';
             }
         }
 
-        function handleLogout() {
-            localStorage.removeItem('adminToken');
+        window.handleLogout = function() {
+            localStorage.removeItem('isAdminLoggedIn');
             location.reload();
         }
 
         function showDashboard() {
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('dashboard-screen').style.display = 'block';
-            loadData();
-            loadStats();
+            loadDataAndStats();
         }
 
-        // Fungsi penyedia Tiket JWT secara otomatis
-        function getAuthHeader() {
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
-            };
-        }
-
-
-        // --- 2. SISTEM ANALITIK (CHART & STATS) ---
-        
+        // --- 2. GRAFIK STATISTIK (CHART.JS) ---
         let analyticsChart;
-        function initChart(projectsCount, visitorsCount) {
+        function initChart(projectsCount) {
             const ctx = document.getElementById('myChart').getContext('2d');
             if (analyticsChart) {
-                analyticsChart.data.datasets[0].data = [projectsCount, visitorsCount];
+                analyticsChart.data.datasets[0].data = [projectsCount];
                 analyticsChart.update();
             } else {
                 analyticsChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: ['Jumlah Project', 'Jumlah Pengunjung'],
-                        datasets: [{ label: 'Statistik', data: [projectsCount, visitorsCount], backgroundColor: ['#3b82f6', '#00b377'], borderRadius: 5 }]
+                        labels: ['Total Project Tersimpan'],
+                        datasets: [{ 
+                            label: 'Jumlah', 
+                            data: [projectsCount], 
+                            backgroundColor: ['#3b82f6'], 
+                            borderRadius: 5 
+                        }]
                     },
-                    options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { color: '#cdced5' } }, x: { ticks: { color: '#cdced5' } } }, plugins: { legend: { display: false } } }
+                    options: { 
+                        responsive: true, 
+                        scales: { 
+                            y: { beginAtZero: true, ticks: { color: '#cdced5', stepSize: 1 } }, 
+                            x: { ticks: { color: '#cdced5' } } 
+                        }, 
+                        plugins: { legend: { display: false } } 
+                    }
                 });
             }
         }
 
-        async function loadStats() {
-            if (!localStorage.getItem('adminToken')) return; 
-
-            try {
-                const response = await fetch('http://localhost:3000/api/stats');
-                const data = await response.json();
-                
-                document.getElementById('total-projects').textContent = data.total_projects || 0;
-                document.getElementById('total-visitors').textContent = data.total_visits || 0;
-                initChart(data.total_projects || 0, data.total_visits || 0);
-            } catch (error) {
-                console.error("Gagal load statistik");
-            }
-        }
-        
-        setInterval(loadStats, 3000); 
-
-
-        // --- 3. SISTEM CRUD PROJECT ---
-        
+        // --- 3. CRUD & LOAD DATA DARI FIRESTORE ---
         const form = document.getElementById('projectForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -227,63 +223,84 @@
             const title = document.getElementById('title').value;
             const description = document.getElementById('description').value;
             const repository_url = document.getElementById('repository_url').value;
-            const tools = document.getElementById('tools').value.split(',').map(t => t.trim());
-
-            const isEditing = id !== "";
-            const url = isEditing ? `http://localhost:3000/api/projects/${id}` : 'http://localhost:3000/api/projects';
-            const method = isEditing ? 'PUT' : 'POST';
+            const toolsInput = document.getElementById('tools').value;
+            
+            // Ubah tools dari string koma jadi array
+            const tools = toolsInput.split(',').map(t => t.trim());
 
             try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: getAuthHeader(), // Menyisipkan token JWT
-                    body: JSON.stringify({ title, description, repository_url, tools })
-                });
-
-                if (response.status === 401 || response.status === 403) {
-                    alert('Sesi habis! Silakan login kembali.');
-                    handleLogout();
-                    return;
+                if (id) {
+                    // Update data (PUT)
+                    const projectRef = doc(db, "projects", id);
+                    await updateDoc(projectRef, { title, description, repository_url, tools });
+                    alert('✅ Project berhasil diperbarui!');
+                } else {
+                    // Tambah data baru (POST)
+                    await addDoc(collection(db, "projects"), {
+                        title,
+                        description,
+                        repository_url,
+                        tools,
+                        created_at: serverTimestamp()
+                    });
+                    alert('✅ Project berhasil ditambahkan!');
                 }
 
                 form.reset();
                 document.getElementById('project-id').value = '';
                 document.getElementById('submit-btn').textContent = 'Simpan Data';
                 document.getElementById('form-title').textContent = 'Tambah Project';
-                loadData();
-            } catch (err) {
-                alert('Gagal menyimpan data.');
+                loadDataAndStats();
+            } catch (error) {
+                console.error("Gagal menyimpan data:", error);
+                alert('❌ Gagal menyimpan data ke database.');
             }
         });
 
-        async function loadData() {
+        async function loadDataAndStats() {
             const list = document.getElementById('admin-project-list');
             try {
-                const response = await fetch('http://localhost:3000/api/projects');
-                const projects = await response.json();
+                const querySnapshot = await getDocs(collection(db, "projects"));
                 list.innerHTML = '';
                 
-                projects.forEach(p => {
-                    const toolsStr = Array.isArray(p.tools) ? p.tools.join(', ') : p.tools;
+                let totalProjects = 0;
+
+                querySnapshot.forEach(docSnap => {
+                    totalProjects++;
+                    const p = docSnap.data();
+                    const pId = docSnap.id;
+                    const toolsStr = Array.isArray(p.tools) ? p.tools.join(', ') : (p.tools || '');
+
                     list.innerHTML += `
                         <div class="project-row">
                             <div>
                                 <strong style="color:white">${p.title}</strong>
                                 <p style="margin:5px 0 0 0; font-size:13px; color:#a0a3bd">${p.description}</p>
                             </div>
-                            <div>
-                                <button class="btn-warning" onclick='editProject(${p.id}, ${JSON.stringify(p.title)}, ${JSON.stringify(p.description)}, ${JSON.stringify(p.repository_url)}, ${JSON.stringify(toolsStr)})'>Edit</button>
-                                <button class="btn-danger" onclick="deleteData(${p.id})">Hapus</button>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn-warning" type="button" onclick="window.prepareEdit('${pId}', '${p.title.replace(/'/g, "\\'")}', '${p.description.replace(/'/g, "\\'")}', '${p.repository_url || ''}', '${toolsStr}')">Edit</button>
+                                <button class="btn-danger" type="button" onclick="window.removeData('${pId}')">Hapus</button>
                             </div>
                         </div>
                     `;
                 });
+
+                if (totalProjects === 0) {
+                    list.innerHTML = '<i>Belum ada project di database.</i>';
+                }
+
+                // Update angka statistik & grafik
+                document.getElementById('total-projects').textContent = totalProjects;
+                initChart(totalProjects);
+
             } catch (error) {
-                list.innerHTML = 'Gagal memuat data.';
+                console.error("Gagal memuat data:", error);
+                list.innerHTML = 'Gagal memuat data dari cloud.';
             }
         }
 
-        function editProject(id, title, desc, repo, tools) {
+        // Fungsi bantu untuk tombol Edit
+        window.prepareEdit = function(id, title, desc, repo, tools) {
             document.getElementById('project-id').value = id;
             document.getElementById('title').value = title;
             document.getElementById('description').value = desc;
@@ -291,22 +308,25 @@
             document.getElementById('tools').value = tools;
             document.getElementById('form-title').textContent = 'Edit Project: ' + title;
             document.getElementById('submit-btn').textContent = 'Perbarui Data';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function deleteData(id) {
-            if(confirm('Hapus project ini?')) {
-                const response = await fetch(`http://localhost:3000/api/projects/${id}`, { 
-                    method: 'DELETE',
-                    headers: getAuthHeader() // Menyisipkan token JWT
-                });
-                
-                if (response.status === 401 || response.status === 403) {
-                    alert('Akses ditolak! Token tidak valid.');
-                    return;
+        // Fungsi hapus data
+        window.removeData = async function(id) {
+            if(confirm('Yakin ingin menghapus project ini dari Firebase?')) {
+                try {
+                    await deleteDoc(doc(db, "projects", id));
+                    alert('✅ Project berhasil dihapus!');
+                    loadDataAndStats();
+                } catch (error) {
+                    console.error("Gagal menghapus:", error);
+                    alert('❌ Gagal menghapus project.');
                 }
-                loadData();
             }
         }
+
+        // Jalankan fungsi load saat halaman dibuka
+        loadDataAndStats();
     </script>
 </body>
 </html>
