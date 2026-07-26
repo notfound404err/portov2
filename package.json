@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^4.4.5"
+    "vite": "^6.4.3"
   },
   "description": ":flags: A plain portfolio template for everyone",
   "main": "index.js",
